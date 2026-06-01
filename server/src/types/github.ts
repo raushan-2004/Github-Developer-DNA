@@ -44,3 +44,17 @@ export interface GitHubStats {
   totalContributedTo: number;
   topLanguages: Record<string, number>;
 }
+
+export type DeveloperType = 
+  | 'Frontend Engineer'
+  | 'Backend Engineer'
+  | 'Full Stack Engineer'
+  | 'AI Engineer'
+  | 'Open Source Contributor';
+
+export interface DeveloperDNA {
+  developerType: DeveloperType;
+  confidence: number;
+  strengths: string[];
+  recommendations: string[];
+}
