@@ -1,18 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   ArrowLeft, 
   MapPin, 
   Briefcase, 
   Link as LinkIcon, 
   Calendar, 
-  Search, 
   Star, 
   BookOpen, 
   Users, 
   GitFork, 
   AlertCircle, 
-  ExternalLink,
   Sparkles,
   SearchIcon,
   Moon,
@@ -34,7 +32,8 @@ const Github = (props: React.SVGProps<SVGSVGElement>) => (
     <path d="M9 18c-4.51 2-5-2-7-2" />
   </svg>
 );
-import { useGithubUser, useGithubRepos, useGithubStats, type GitHubRepo } from '../api/queries';
+import { useGithubUser, useGithubRepos, useGithubStats } from '../api/queries';
+import RepositoryExplorer from './RepositoryExplorer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
@@ -67,11 +66,9 @@ const LANGUAGE_COLORS: Record<string, string> = {
   Kotlin: '#A97BFF',
   C: '#555555'
 };
-
 export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }: DashboardProps) {
   const [dashboardSearch, setDashboardSearch] = useState('');
   const [activeUsername, setActiveUsername] = useState(username);
-  const [repoQuery, setRepoQuery] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
 
   // Queries
@@ -86,7 +83,6 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
       setActiveUsername(dashboardSearch.trim());
       setDashboardSearch('');
       setSelectedLanguage(null);
-      setRepoQuery('');
     }
   };
 
@@ -162,16 +158,7 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
     return `${narrative} Exhibits an ${activityRating} workflow with ${repoCount} projects, ${impactRating} across the ecosystem.`;
   }, [user, stats, languagesList]);
 
-  // Filtered repositories based on search and language pill selection
-  const filteredRepos = useMemo(() => {
-    if (!repos) return [];
-    return repos.filter((repo: GitHubRepo) => {
-      const matchesSearch = repo.name.toLowerCase().includes(repoQuery.toLowerCase()) || 
-        (repo.description && repo.description.toLowerCase().includes(repoQuery.toLowerCase()));
-      const matchesLanguage = selectedLanguage ? repo.language === selectedLanguage : true;
-      return matchesSearch && matchesLanguage;
-    });
-  }, [repos, repoQuery, selectedLanguage]);
+
 
   // Handle loading state
   if (userLoading || reposLoading || statsLoading) {
@@ -639,136 +626,24 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
 
           </motion.div>
 
-          {/* Right Column: Repository DNA Showcase */}
+          {/* Right Column: Repository DNA Showcase (Interactive Repository Explorer) */}
           <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
-            <Card className="border-border/30 bg-card/40 backdrop-blur-md shadow-sm min-h-[500px]">
+            <Card className="border-border/30 bg-card/40 backdrop-blur-md shadow-sm">
               <CardHeader className="pb-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-indigo-400" />
-                      Repository DNA
-                    </CardTitle>
-                    <CardDescription>
-                      {selectedLanguage ? (
-                        <span>Showing {filteredRepos.length} repos containing <strong className="text-indigo-400 font-semibold">{selectedLanguage}</strong></span>
-                      ) : (
-                        <span>Exhibiting {repos?.length || 0} workspaces ordered by update timelines</span>
-                      )}
-                    </CardDescription>
-                  </div>
-                </div>
-
-                {/* Local search within repos */}
-                <div className="relative mt-4 w-full">
-                  <Search className="absolute inset-y-0 left-3 my-auto w-4.5 h-4.5 text-muted-foreground" />
-                  <Input 
-                    type="text"
-                    placeholder="Search workspaces by name or description..."
-                    className="pl-10 rounded-xl bg-secondary/25 border-border/40 text-sm focus-visible:ring-primary focus-visible:border-border/50"
-                    value={repoQuery}
-                    onChange={(e) => setRepoQuery(e.target.value)}
-                  />
-                </div>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="w-4.5 h-4.5 text-indigo-400" />
+                  Repository DNA Explorer
+                </CardTitle>
+                <CardDescription>
+                  Search, sort, filter, and expand workspace repositories
+                </CardDescription>
               </CardHeader>
-
-              <CardContent className="space-y-4">
-                <AnimatePresence mode="popLayout">
-                  {filteredRepos.length === 0 ? (
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="p-12 text-center text-muted-foreground border border-dashed rounded-2xl flex flex-col items-center justify-center space-y-3"
-                    >
-                      <AlertCircle className="w-8 h-8 text-muted-foreground/60" />
-                      <p className="font-semibold text-foreground/90">No Workspaces Found</p>
-                      <p className="text-xs leading-relaxed max-w-xs">
-                        Try modifying your query or clearing the active language filter to see all projects.
-                      </p>
-                      {selectedLanguage && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => setSelectedLanguage(null)}
-                          className="rounded-full mt-2"
-                        >
-                          Clear Language Filter
-                        </Button>
-                      )}
-                    </motion.div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {filteredRepos.slice(0, 12).map((repo: GitHubRepo) => (
-                        <motion.div
-                          layout
-                          key={repo.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          transition={{ duration: 0.2 }}
-                          className="p-5 rounded-2xl border border-border/30 bg-card/20 hover:bg-secondary/20 hover:border-indigo-500/20 shadow-sm flex flex-col justify-between h-44 transition-all group"
-                        >
-                          <div>
-                            <div className="flex items-center justify-between gap-2">
-                              <h4 className="text-sm font-extrabold text-foreground group-hover:text-indigo-400 transition-colors truncate max-w-[80%]">
-                                {repo.name}
-                              </h4>
-                              
-                              <a 
-                                href={repo.html_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all p-1 bg-secondary/50 rounded-lg hover:bg-secondary"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
-                            </div>
-
-                            {/* Repo Description */}
-                            <p className="text-xs text-muted-foreground line-clamp-2 mt-2 leading-relaxed h-8">
-                              {repo.description || "No description provided for this repository."}
-                            </p>
-                          </div>
-
-                          {/* Stats footer in repo card */}
-                          <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t border-border/10 mt-auto">
-                            {repo.language ? (
-                              <div className="flex items-center gap-1.5 bg-secondary/40 px-2.5 py-0.5 rounded-full border border-border/20 text-foreground/80">
-                                <span 
-                                  className="w-2 h-2 rounded-full inline-block"
-                                  style={{ backgroundColor: LANGUAGE_COLORS[repo.language] || '#8b949e' }}
-                                />
-                                <span className="font-semibold">{repo.language}</span>
-                              </div>
-                            ) : (
-                              <span />
-                            )}
-
-                            <div className="flex items-center gap-3">
-                              <span className="flex items-center gap-1">
-                                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400/10" />
-                                <strong>{repo.stargazers_count}</strong>
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <GitFork className="w-3.5 h-3.5 text-indigo-400" />
-                                <strong>{repo.forks_count}</strong>
-                              </span>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </AnimatePresence>
-
-                {filteredRepos.length > 12 && (
-                  <div className="text-center pt-4">
-                    <p className="text-xs text-muted-foreground">
-                      Displaying top 12 repositories of {filteredRepos.length} total.
-                    </p>
-                  </div>
-                )}
+              <CardContent>
+                <RepositoryExplorer 
+                  repos={repos || []} 
+                  selectedLanguage={selectedLanguage}
+                  setSelectedLanguage={setSelectedLanguage}
+                />
               </CardContent>
             </Card>
           </motion.div>
