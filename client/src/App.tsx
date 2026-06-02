@@ -6,6 +6,21 @@ import BattleMode from './features/github-profile/components/BattleMode';
 import { Sun, Moon, Server, Loader2, CheckCircle2, Wifi } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const extractUsername = (input: string): string => {
+  const trimmed = input.trim();
+  if (!trimmed) return '';
+  
+  // Regex to match github.com/username or https://github.com/username etc.
+  const githubUrlRegex = /^(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9-_\.]+)(?:\/.*)?$/i;
+  const match = trimmed.match(githubUrlRegex);
+  
+  if (match && match[1]) {
+    return match[1];
+  }
+  
+  return trimmed;
+};
+
 function App() {
   const [activeUsername, setActiveUsername] = useState<string | null>(null);
   const [battleUsernames, setBattleUsernames] = useState<[string, string] | null>(null);
@@ -66,11 +81,14 @@ function App() {
     const battleParam = params.get('battle');
     
     if (userParam) {
-      setActiveUsername(userParam);
+      const parsed = extractUsername(userParam);
+      if (parsed) setActiveUsername(parsed);
     } else if (battleParam) {
       const parts = battleParam.split(',');
       if (parts.length === 2 && parts[0].trim() && parts[1].trim()) {
-        setBattleUsernames([parts[0].trim(), parts[1].trim()]);
+        const u1 = extractUsername(parts[0]);
+        const u2 = extractUsername(parts[1]);
+        if (u1 && u2) setBattleUsernames([u1, u2]);
       }
     }
   }, []);
@@ -198,6 +216,23 @@ function App() {
         )}
       </AnimatePresence>
 
+      {/* Theme Toggle located at top right of the entire page on the home search page */}
+      {!activeUsername && !battleUsernames && (
+        <div className="absolute top-6 right-6 z-20">
+          <button
+            onClick={toggleDarkMode}
+            className="p-2.5 rounded-full border border-border/50 bg-secondary/30 hover:bg-secondary/60 backdrop-blur-md transition-colors cursor-pointer shadow-sm text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-95 transform"
+            aria-label="Toggle Dark Mode"
+          >
+            {darkMode ? (
+              <Sun className="w-5 h-5 text-yellow-400" />
+            ) : (
+              <Moon className="w-5 h-5 text-slate-700" />
+            )}
+          </button>
+        </div>
+      )}
+
       {/* 3D Glass Ambient Background Glows */}
       <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none dark:bg-indigo-500/5 animate-pulse" style={{ animationDuration: '8s' }} />
       <div className="absolute bottom-[-10%] right-[20%] w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none dark:bg-purple-500/5 animate-pulse" style={{ animationDuration: '10s' }} />
@@ -220,21 +255,6 @@ function App() {
           />
         ) : (
           <div className="relative w-full max-w-3xl flex flex-col items-center">
-            {/* Theme Toggle located at top right on searching homepage */}
-            <div className="absolute -top-16 right-4 sm:right-0">
-              <button
-                onClick={toggleDarkMode}
-                className="p-2.5 rounded-full border border-border/50 bg-secondary/30 hover:bg-secondary/60 transition-colors cursor-pointer shadow-sm text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                aria-label="Toggle Dark Mode"
-              >
-                {darkMode ? (
-                  <Sun className="w-5 h-5 text-yellow-400" />
-                ) : (
-                  <Moon className="w-5 h-5 text-slate-700" />
-                )}
-              </button>
-            </div>
-            
             <SearchHero onSelect={setActiveUsername} onBattle={(u1, u2) => setBattleUsernames([u1, u2])} />
           </div>
         )}

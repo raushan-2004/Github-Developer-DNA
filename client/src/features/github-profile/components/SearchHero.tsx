@@ -64,7 +64,15 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
   const debouncedSearch = useDebounce(parsedSearchTerm, 500);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  const parsedBattleTerm1 = React.useMemo(() => extractUsername(battleTerm1), [battleTerm1]);
+  const parsedBattleTerm2 = React.useMemo(() => extractUsername(battleTerm2), [battleTerm2]);
+
+  const debouncedBattle1 = useDebounce(parsedBattleTerm1, 500);
+  const debouncedBattle2 = useDebounce(parsedBattleTerm2, 500);
+
   const { data: user, isLoading, isError } = useGithubUser(isBattleMode ? '' : debouncedSearch);
+  const { data: bUser1, isLoading: bLoading1 } = useGithubUser(isBattleMode ? debouncedBattle1 : '');
+  const { data: bUser2, isLoading: bLoading2 } = useGithubUser(isBattleMode ? debouncedBattle2 : '');
 
   useEffect(() => {
     const handleFocusSearch = (e: KeyboardEvent) => {
@@ -264,6 +272,66 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
 
       {/* Results Area */}
       <div className="w-full min-h-[150px] mt-4">
+        {isBattleMode && (debouncedBattle1 || debouncedBattle2) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mb-6">
+            {/* Player 1 Preview */}
+            <div className="min-h-[100px]">
+              {bLoading1 && (
+                <div className="flex items-center space-x-4 p-4 rounded-2xl border bg-card/20 backdrop-blur-md animate-pulse">
+                  <div className="w-12 h-12 rounded-full bg-indigo-500/10" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 w-1/3 bg-indigo-500/10 rounded" />
+                    <div className="h-3 w-1/2 bg-indigo-500/10 rounded" />
+                  </div>
+                </div>
+              )}
+              {bUser1 && !bLoading1 && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center space-x-4 p-4 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 backdrop-blur-md shadow-sm relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-12 h-12 bg-indigo-500/5 rounded-full blur-xl" />
+                  <img src={bUser1.avatar_url} alt={bUser1.login} className="w-12 h-12 rounded-full border border-indigo-500/30 object-cover" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-foreground truncate">{bUser1.name || bUser1.login}</h4>
+                    <p className="text-xs text-indigo-400 font-semibold truncate">@{bUser1.login}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 font-medium">{bUser1.public_repos} repos • {bUser1.followers} followers</p>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Player 2 Preview */}
+            <div className="min-h-[100px]">
+              {bLoading2 && (
+                <div className="flex items-center space-x-4 p-4 rounded-2xl border bg-card/20 backdrop-blur-md animate-pulse">
+                  <div className="w-12 h-12 rounded-full bg-rose-500/10" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 w-1/3 bg-rose-500/10 rounded" />
+                    <div className="h-3 w-1/2 bg-rose-500/10 rounded" />
+                  </div>
+                </div>
+              )}
+              {bUser2 && !bLoading2 && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center space-x-4 p-4 rounded-2xl border border-rose-500/20 bg-rose-500/5 backdrop-blur-md shadow-sm relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-12 h-12 bg-rose-500/5 rounded-full blur-xl" />
+                  <img src={bUser2.avatar_url} alt={bUser2.login} className="w-12 h-12 rounded-full border border-rose-500/30 object-cover" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-foreground truncate">{bUser2.name || bUser2.login}</h4>
+                    <p className="text-xs text-rose-400 font-semibold truncate">@{bUser2.login}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 font-medium">{bUser2.public_repos} repos • {bUser2.followers} followers</p>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </div>
+        )}
+
         {isLoading && (
           <motion.div 
             initial={{ opacity: 0 }} 
@@ -301,11 +369,8 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
               saveSearchToHistory({ type: 'user', username: user.login, avatarUrl: user.avatar_url, name: user.name });
               onSelect(user.login);
             }}
-            className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 p-6 rounded-2xl border bg-card/40 backdrop-blur-md border-border/50 shadow-sm hover:shadow-lg hover:border-indigo-500/20 transition-all cursor-pointer group relative overflow-hidden bg-grid-pattern"
+            className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 p-6 rounded-2xl border bg-card/40 backdrop-blur-md border-border/50 shadow-sm hover:shadow-lg hover:border-indigo-500/30 hover:bg-card/50 transition-all cursor-pointer group relative overflow-hidden bg-grid-pattern"
           >
-            {/* Glow border on hover */}
-            <div className="absolute -inset-px rounded-2xl border border-indigo-500/0 group-hover:border-indigo-500/10 transition-colors pointer-events-none" />
-
             <img src={user.avatar_url} alt={user.login} className="w-20 h-20 rounded-full border-2 border-indigo-500/10 group-hover:border-indigo-500/30 object-cover shadow-sm transition-colors" />
             
             <div className="flex-1 text-center md:text-left">
