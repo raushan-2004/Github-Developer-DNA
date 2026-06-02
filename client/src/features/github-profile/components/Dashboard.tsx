@@ -34,6 +34,8 @@ const Github = (props: React.SVGProps<SVGSVGElement>) => (
 );
 import { useGithubUser, useGithubRepos, useGithubStats } from '../api/queries';
 import RepositoryExplorer from './RepositoryExplorer';
+import AnalyticsSection from './AnalyticsSection';
+import AICareerAdvisor from './AICareerAdvisor';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
@@ -649,6 +651,24 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
           </motion.div>
 
         </div>
+
+        {/* 5. AI Career Advisor Section */}
+        <AICareerAdvisor 
+          profileData={{
+            username: user.login,
+            publicRepos: user.public_repos,
+            followers: user.followers,
+            totalStars: stats?.totalStars,
+            topLanguages: languagesList.map(l => l.name),
+            developerType: developerBadges.map(b => b.text).join(', ')
+          }} 
+        />
+
+        {/* 6. Analytics Section */}
+        <AnalyticsSection 
+          repos={repos || []} 
+          languagesList={languagesList} 
+        />
 
       </motion.div>
     </div>

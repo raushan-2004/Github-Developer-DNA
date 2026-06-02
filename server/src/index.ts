@@ -9,6 +9,7 @@ import { errorHandler } from './middlewares/errorHandler';
 
 // Import routes
 import githubRoutes from './routes/githubRoutes';
+import aiRoutes from './routes/aiRoutes';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 app.use('/api/github', githubRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Error Handling middleware must be defined after all routes
 app.use(errorHandler);

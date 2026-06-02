@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '../../../lib/api';
 
 export interface GitHubUser {
@@ -102,5 +102,23 @@ export const useGithubStats = (username: string) => {
     },
     enabled: !!username,
     retry: false,
+  });
+};
+
+export interface CareerReviewResult {
+  careerSummary: string;
+  strengths: string[];
+  weaknesses: string[];
+  suggestedTechnologies: string[];
+  suggestedCareerPath: string;
+  resumeRecommendations: string[];
+}
+
+export const useAiReview = () => {
+  return useMutation({
+    mutationFn: async (profileData: any) => {
+      const response = await api.post<ApiResponse<CareerReviewResult>>('/ai/review', profileData);
+      return response.data.data;
+    }
   });
 };
