@@ -38,6 +38,21 @@ export interface HistoryItem {
   timestamp: number;
 }
 
+const extractUsername = (input: string): string => {
+  const trimmed = input.trim();
+  if (!trimmed) return '';
+  
+  // Regex to match github.com/username or https://github.com/username etc.
+  const githubUrlRegex = /^(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9-_\.]+)(?:\/.*)?$/i;
+  const match = trimmed.match(githubUrlRegex);
+  
+  if (match && match[1]) {
+    return match[1];
+  }
+  
+  return trimmed;
+};
+
 export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
   const [isBattleMode, setIsBattleMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,7 +60,8 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
   const [battleTerm2, setBattleTerm2] = useState('');
   const [recentSearches, setRecentSearches] = useState<HistoryItem[]>([]);
   
-  const debouncedSearch = useDebounce(searchTerm, 500);
+  const parsedSearchTerm = React.useMemo(() => extractUsername(searchTerm), [searchTerm]);
+  const debouncedSearch = useDebounce(parsedSearchTerm, 500);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const { data: user, isLoading, isError } = useGithubUser(isBattleMode ? '' : debouncedSearch);
@@ -125,23 +141,24 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isBattleMode) {
-      if (battleTerm1.trim() && battleTerm2.trim()) {
-        const u1 = battleTerm1.trim();
-        const u2 = battleTerm2.trim();
+      const u1 = extractUsername(battleTerm1);
+      const u2 = extractUsername(battleTerm2);
+      if (u1 && u2) {
         saveSearchToHistory({ type: 'battle', username1: u1, username2: u2 });
         onBattle(u1, u2);
       }
     } else {
+      const parsedUsername = extractUsername(searchTerm);
       if (user) {
         saveSearchToHistory({ type: 'user', username: user.login, avatarUrl: user.avatar_url, name: user.name });
         onSelect(user.login);
-      } else if (searchTerm.trim()) {
-        const username = searchTerm.trim();
-        saveSearchToHistory({ type: 'user', username });
-        onSelect(username);
+      } else if (parsedUsername) {
+        saveSearchToHistory({ type: 'user', username: parsedUsername });
+        onSelect(parsedUsername);
       }
     }
   };
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[75vh] px-4 w-full max-w-3xl mx-auto space-y-8">
@@ -158,7 +175,7 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
             <Github className="w-12 h-12 text-foreground relative" />
           </div>
         </div>
-        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text">
+        <h1 className="text-4xl md:text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 drop-shadow-sm font-display">
           GitHub Developer DNA
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto font-medium">
@@ -168,20 +185,20 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
 
       {/* Mode Toggle */}
       <div className="flex justify-center mt-2">
-        <div className="bg-secondary/40 p-1 rounded-full border border-border/50 flex">
+        <div className="bg-secondary/40 p-1.5 rounded-full border border-border/50 flex space-x-1 backdrop-blur-md">
           <button 
             type="button"
             onClick={() => setIsBattleMode(false)}
-            className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${!isBattleMode ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center cursor-pointer ${!isBattleMode ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/20 scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/30'}`}
           >
-            DNA Analyze
+            <Search className="w-4 h-4 mr-1.5" /> DNA Analyze
           </button>
           <button 
             type="button"
             onClick={() => setIsBattleMode(true)}
-            className={`px-6 py-2 rounded-full text-sm font-semibold flex items-center transition-all ${isBattleMode ? 'bg-rose-500/10 text-rose-500 shadow-sm border border-rose-500/20' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center cursor-pointer ${isBattleMode ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-md shadow-rose-500/20 scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/30'}`}
           >
-            <Swords className="w-4 h-4 mr-2" /> Battle Mode
+            <Swords className="w-4 h-4 mr-1.5" /> Battle Mode
           </button>
         </div>
       </div>
@@ -196,19 +213,19 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
       >
         {!isBattleMode ? (
           <div className="relative w-full">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-muted-foreground group-focus-within:text-indigo-400 transition-colors">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-muted-foreground group-focus-within:text-indigo-400 transition-colors z-10">
               <Search className="w-5 h-5" />
             </div>
             <Input 
               ref={inputRef}
               type="text" 
               placeholder="Enter a GitHub username... (e.g., torvalds)  [Press '/' to focus]"
-              className="w-full h-14 pl-12 pr-32 text-lg rounded-full shadow-sm bg-card/40 backdrop-blur-sm border-2 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 transition-all font-medium"
+              className="w-full h-14 pl-12 pr-32 text-lg rounded-full shadow-sm bg-card/40 backdrop-blur-sm border-2 border-border/60 hover:border-indigo-500/50 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500 transition-all font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <div className="absolute inset-y-0 right-2 flex items-center">
-              <Button type="submit" className="rounded-full px-6 h-10 font-semibold shadow-md bg-indigo-600 hover:bg-indigo-500 text-white border-none cursor-pointer">
+              <Button type="submit" className="rounded-full px-6 h-10 font-bold shadow-md bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-none cursor-pointer hover:shadow-lg transition-all transform hover:scale-[1.03] active:scale-[0.98]">
                 Analyze
               </Button>
             </div>
@@ -219,7 +236,7 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
               <Input 
                 type="text" 
                 placeholder="Player 1 username..."
-                className="w-full h-14 px-6 text-lg rounded-full shadow-sm bg-card/40 backdrop-blur-sm border-2 border-indigo-500/30 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 transition-all font-medium text-center"
+                className="w-full h-14 px-6 text-lg rounded-full shadow-sm bg-card/40 backdrop-blur-sm border-2 border-indigo-500/30 hover:border-indigo-500/60 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500 transition-all font-medium text-center"
                 value={battleTerm1}
                 onChange={(e) => setBattleTerm1(e.target.value)}
                 required
@@ -230,14 +247,14 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
               <Input 
                 type="text" 
                 placeholder="Player 2 username..."
-                className="w-full h-14 px-6 text-lg rounded-full shadow-sm bg-card/40 backdrop-blur-sm border-2 border-rose-500/30 focus-visible:ring-rose-500 focus-visible:border-rose-500 transition-all font-medium text-center"
+                className="w-full h-14 px-6 text-lg rounded-full shadow-sm bg-card/40 backdrop-blur-sm border-2 border-rose-500/30 hover:border-rose-500/60 focus-visible:ring-2 focus-visible:ring-rose-500/50 focus-visible:border-rose-500 transition-all font-medium text-center"
                 value={battleTerm2}
                 onChange={(e) => setBattleTerm2(e.target.value)}
                 required
               />
             </div>
             <div className="w-full md:w-auto flex justify-center mt-2 md:mt-0">
-              <Button type="submit" className="w-full md:w-auto rounded-full px-8 h-14 font-bold shadow-lg bg-gradient-to-r from-indigo-500 to-rose-500 hover:opacity-90 text-white border-none cursor-pointer text-lg">
+              <Button type="submit" className="w-full md:w-auto rounded-full px-8 h-14 font-black shadow-lg bg-gradient-to-r from-indigo-500 to-rose-500 hover:from-indigo-600 hover:to-rose-600 hover:shadow-indigo-500/10 text-white border-none cursor-pointer text-lg hover:scale-[1.03] active:scale-[0.98] transition-all">
                 FIGHT!
               </Button>
             </div>

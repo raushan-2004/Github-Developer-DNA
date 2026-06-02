@@ -109,8 +109,13 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
   // Header quick search submission
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (dashboardSearch.trim()) {
-      setActiveUsername(dashboardSearch.trim());
+    const query = dashboardSearch.trim();
+    if (query) {
+      const githubUrlRegex = /^(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9-_\.]+)(?:\/.*)?$/i;
+      const match = query.match(githubUrlRegex);
+      const parsedUsername = (match && match[1]) ? match[1] : query;
+      
+      setActiveUsername(parsedUsername);
       setDashboardSearch('');
       setSelectedLanguage(null);
     }
