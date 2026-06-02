@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Users, BookOpen, Swords } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Users, BookOpen, Swords, Clock, Trash2, X } from 'lucide-react';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
 import { Skeleton } from '../../../components/ui/skeleton';
@@ -27,27 +27,118 @@ interface SearchHeroProps {
   onBattle: (user1: string, user2: string) => void;
 }
 
+export interface HistoryItem {
+  id: string;
+  type: 'user' | 'battle';
+  username?: string;
+  avatarUrl?: string;
+  name?: string;
+  username1?: string;
+  username2?: string;
+  timestamp: number;
+}
+
 export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
   const [isBattleMode, setIsBattleMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [battleTerm1, setBattleTerm1] = useState('');
   const [battleTerm2, setBattleTerm2] = useState('');
+  const [recentSearches, setRecentSearches] = useState<HistoryItem[]>([]);
   
   const debouncedSearch = useDebounce(searchTerm, 500);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const { data: user, isLoading, isError } = useGithubUser(isBattleMode ? '' : debouncedSearch);
+
+  useEffect(() => {
+    const handleFocusSearch = (e: KeyboardEvent) => {
+      // Focus on Ctrl + K or /
+      if (
+        (e.ctrlKey && e.key.toLowerCase() === 'k') || 
+        (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA')
+      ) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleFocusSearch);
+    return () => window.removeEventListener('keydown', handleFocusSearch);
+  }, []);
+
+  useEffect(() => {
+    const existing = localStorage.getItem('recent_searches');
+    if (existing) {
+      try {
+        setRecentSearches(JSON.parse(existing));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  const saveSearchToHistory = (item: Omit<HistoryItem, 'id' | 'timestamp'>) => {
+    const id = item.type === 'user' 
+      ? `user-${item.username?.toLowerCase()}`
+      : `battle-${item.username1?.toLowerCase()}-${item.username2?.toLowerCase()}`;
+
+    const newHistory = [
+      {
+        ...item,
+        id,
+        timestamp: Date.now()
+      },
+      ...recentSearches.filter(h => h.id !== id)
+    ].slice(0, 10);
+
+    setRecentSearches(newHistory);
+    localStorage.setItem('recent_searches', JSON.stringify(newHistory));
+  };
+
+  const handleSelectRecent = (item: HistoryItem) => {
+    const newHistory = [
+      { ...item, timestamp: Date.now() },
+      ...recentSearches.filter(h => h.id !== item.id)
+    ].slice(0, 10);
+    setRecentSearches(newHistory);
+    localStorage.setItem('recent_searches', JSON.stringify(newHistory));
+
+    if (item.type === 'user' && item.username) {
+      onSelect(item.username);
+    } else if (item.type === 'battle' && item.username1 && item.username2) {
+      onBattle(item.username1, item.username2);
+    }
+  };
+
+  const handleDeleteRecent = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const newHistory = recentSearches.filter(h => h.id !== id);
+    setRecentSearches(newHistory);
+    localStorage.setItem('recent_searches', JSON.stringify(newHistory));
+  };
+
+  const handleClearAllRecent = () => {
+    setRecentSearches([]);
+    localStorage.removeItem('recent_searches');
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isBattleMode) {
       if (battleTerm1.trim() && battleTerm2.trim()) {
-        onBattle(battleTerm1.trim(), battleTerm2.trim());
+        const u1 = battleTerm1.trim();
+        const u2 = battleTerm2.trim();
+        saveSearchToHistory({ type: 'battle', username1: u1, username2: u2 });
+        onBattle(u1, u2);
       }
     } else {
       if (user) {
+        saveSearchToHistory({ type: 'user', username: user.login, avatarUrl: user.avatar_url, name: user.name });
         onSelect(user.login);
       } else if (searchTerm.trim()) {
-        onSelect(searchTerm.trim());
+        const username = searchTerm.trim();
+        saveSearchToHistory({ type: 'user', username });
+        onSelect(username);
       }
     }
   };
@@ -109,8 +200,9 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
               <Search className="w-5 h-5" />
             </div>
             <Input 
+              ref={inputRef}
               type="text" 
-              placeholder="Enter a GitHub username... (e.g., torvalds)"
+              placeholder="Enter a GitHub username... (e.g., torvalds)  [Press '/' to focus]"
               className="w-full h-14 pl-12 pr-32 text-lg rounded-full shadow-sm bg-card/40 backdrop-blur-sm border-2 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 transition-all font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -188,7 +280,10 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
           <motion.div 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
-            onClick={() => onSelect(user.login)}
+            onClick={() => {
+              saveSearchToHistory({ type: 'user', username: user.login, avatarUrl: user.avatar_url, name: user.name });
+              onSelect(user.login);
+            }}
             className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 p-6 rounded-2xl border bg-card/40 backdrop-blur-md border-border/50 shadow-sm hover:shadow-lg hover:border-indigo-500/20 transition-all cursor-pointer group relative overflow-hidden bg-grid-pattern"
           >
             {/* Glow border on hover */}
@@ -218,6 +313,7 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
               className="hidden md:flex rounded-full border-border/50 bg-background/50 hover:bg-indigo-600 hover:text-white hover:border-transparent transition-colors group-hover:scale-105"
               onClick={(e) => {
                 e.stopPropagation();
+                saveSearchToHistory({ type: 'user', username: user.login, avatarUrl: user.avatar_url, name: user.name });
                 onSelect(user.login);
               }}
             >
@@ -226,6 +322,96 @@ export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
           </motion.div>
         )}
       </div>
+
+      {/* Recently Searched Section */}
+      {recentSearches.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="w-full space-y-4 pt-6 border-t border-border/40"
+        >
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Clock className="w-4 h-4 text-indigo-400" />
+              Recent Activities
+            </h4>
+            <button 
+              type="button" 
+              onClick={handleClearAllRecent}
+              className="text-xs font-semibold text-muted-foreground hover:text-destructive flex items-center gap-1 bg-secondary/30 hover:bg-destructive/10 px-3 py-1 rounded-full border border-border/50 hover:border-destructive/20 transition-all cursor-pointer font-sans"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Clear All
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 w-full">
+            <AnimatePresence mode="popLayout">
+              {recentSearches.map((item) => (
+                <motion.div
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  onClick={() => handleSelectRecent(item)}
+                  className="group relative flex items-center p-3 rounded-2xl border border-border/40 bg-card/30 backdrop-blur-md hover:bg-card/70 hover:border-indigo-500/30 transition-all cursor-pointer shadow-sm overflow-hidden"
+                >
+                  {/* Glow layer on hover */}
+                  <div className={`absolute inset-0 bg-gradient-to-r ${item.type === 'user' ? 'from-indigo-500/5 to-transparent' : 'from-indigo-500/5 via-rose-500/5 to-transparent'} opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`} />
+
+                  {item.type === 'user' ? (
+                    <>
+                      {item.avatarUrl ? (
+                        <img src={item.avatarUrl} alt={item.username} className="w-10 h-10 rounded-full border border-border/50 object-cover mr-3 shadow-inner" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center mr-3 text-sm">
+                          {item.username?.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0 pr-6 font-sans">
+                        <p className="text-sm font-bold text-foreground truncate group-hover:text-indigo-400 transition-colors">
+                          {item.name || item.username}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate font-semibold">
+                          @{item.username}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500/10 to-rose-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mr-3 relative overflow-hidden">
+                        <Swords className="w-5 h-5 text-rose-500 animate-pulse" />
+                      </div>
+                      <div className="flex-1 min-w-0 pr-6 font-sans">
+                        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1 mb-0.5">
+                          <span className="text-indigo-400 font-extrabold">Battle</span>
+                        </p>
+                        <p className="text-sm font-black text-foreground truncate group-hover:bg-gradient-to-r group-hover:from-indigo-400 group-hover:to-rose-400 group-hover:bg-clip-text group-hover:text-transparent transition-all">
+                          {item.username1} <span className="text-xs font-bold text-muted-foreground/60 italic">vs</span> {item.username2}
+                        </p>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Close/Remove Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteRecent(e, item.id)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-secondary/35 text-muted-foreground hover:text-foreground hover:bg-secondary/80 opacity-0 group-hover:opacity-100 transition-all border border-border/20 cursor-pointer shadow-sm z-10 focus:opacity-100"
+                    aria-label="Remove Search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      )}
+
     </div>
   );
 }

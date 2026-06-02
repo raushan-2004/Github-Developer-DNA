@@ -15,6 +15,58 @@ function App() {
     return saved ? saved === 'dark' : true;
   });
 
+  // 1. Initial mounting effects: parse share links from query parameters
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const userParam = params.get('user');
+    const battleParam = params.get('battle');
+    
+    if (userParam) {
+      setActiveUsername(userParam);
+    } else if (battleParam) {
+      const parts = battleParam.split(',');
+      if (parts.length === 2 && parts[0].trim() && parts[1].trim()) {
+        setBattleUsernames([parts[0].trim(), parts[1].trim()]);
+      }
+    }
+  }, []);
+
+  // 2. Synchronize URL bar state with the application view
+  useEffect(() => {
+    if (activeUsername) {
+      window.history.replaceState({}, '', `?user=${encodeURIComponent(activeUsername)}`);
+    } else if (battleUsernames) {
+      window.history.replaceState({}, '', `?battle=${encodeURIComponent(battleUsernames[0])},${encodeURIComponent(battleUsernames[1])}`);
+    } else {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [activeUsername, battleUsernames]);
+
+  // 3. Global Keyboard Shortcuts Listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Toggle Dark Mode: Alt + T or Ctrl + D
+      if ((e.altKey && e.key.toLowerCase() === 't') || (e.ctrlKey && e.key.toLowerCase() === 'd')) {
+        e.preventDefault();
+        toggleDarkMode();
+      }
+      
+      // Go Back / Escape Arena: Escape
+      if (e.key === 'Escape') {
+        if (activeUsername) {
+          e.preventDefault();
+          setActiveUsername(null);
+        } else if (battleUsernames) {
+          e.preventDefault();
+          setBattleUsernames(null);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeUsername, battleUsernames]);
+
   useEffect(() => {
     const root = window.document.documentElement;
     if (darkMode) {

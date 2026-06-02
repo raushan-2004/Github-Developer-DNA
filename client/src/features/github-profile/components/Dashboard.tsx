@@ -15,7 +15,10 @@ import {
   SearchIcon,
   Moon,
   Sun,
-  ShieldCheck
+  ShieldCheck,
+  Copy,
+  Check,
+  FileDown
 } from 'lucide-react';
 
 const Github = (props: React.SVGProps<SVGSVGElement>) => (
@@ -72,6 +75,31 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
   const [dashboardSearch, setDashboardSearch] = useState('');
   const [activeUsername, setActiveUsername] = useState(username);
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyShareLink = () => {
+    const shareUrl = `${window.location.origin}?user=${encodeURIComponent(activeUsername)}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleExportPDF = () => {
+    window.print();
+  };
+
+  // Keyboard shortcut Ctrl + P to export report as PDF
+  React.useEffect(() => {
+    const handlePrintShortcut = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        handleExportPDF();
+      }
+    };
+    window.addEventListener('keydown', handlePrintShortcut);
+    return () => window.removeEventListener('keydown', handlePrintShortcut);
+  }, [activeUsername]);
 
   // Queries
   const { data: user, isLoading: userLoading, isError: userError } = useGithubUser(activeUsername);
@@ -282,13 +310,122 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
   };
 
   return (
-    <div className="w-full space-y-8 py-2 relative min-h-screen">
+    <div className="w-full space-y-8 py-2 relative min-h-screen print-container">
       
-      {/* 1. Header Toolbar */}
+      {/* Print Specific CSS Stylesheet */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          /* Force light theme for standard paper printing */
+          html, body {
+            background: white !important;
+            color: black !important;
+            font-family: system-ui, -apple-system, sans-serif !important;
+          }
+          
+          /* Hide interactive components and elements */
+          .no-print,
+          button,
+          form,
+          .quick-search,
+          .back-btn,
+          .theme-toggle,
+          input,
+          a[href^="javascript:"],
+          .border-b.border-border\\/40.pb-6 {
+            display: none !important;
+          }
+
+          /* Remove complex animations */
+          * {
+            transform: none !important;
+            animation: none !important;
+            transition: none !important;
+          }
+
+          /* Executive report layouts */
+          .print-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+
+          .card {
+            border: 1px solid #e2e8f0 !important;
+            background: white !important;
+            color: black !important;
+            box-shadow: none !important;
+            page-break-inside: avoid !important;
+            border-radius: 12px !important;
+            margin-bottom: 16px !important;
+          }
+
+          /* Grid layout adjustment for print sheets */
+          .grid {
+            display: grid !important;
+          }
+          
+          .lg\\:grid-cols-4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          }
+
+          .lg\\:grid-cols-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          }
+          
+          .lg\\:col-span-2 {
+            grid-column: span 2 / span 2 !important;
+          }
+
+          .lg\\:col-span-1 {
+            grid-column: span 1 / span 1 !important;
+          }
+
+          .text-foreground, .text-card-foreground {
+            color: #0f172a !important;
+          }
+
+          .text-muted-foreground {
+            color: #475569 !important;
+          }
+
+          .bg-muted, .bg-secondary {
+            background-color: #f1f5f9 !important;
+          }
+
+          .border {
+            border-color: #e2e8f0 !important;
+          }
+
+          .shadow-md, .shadow-xl {
+            box-shadow: none !important;
+          }
+          
+          /* Force page break before Analytics or Career advisor if necessary */
+          .print-page-break {
+            page-break-before: always !important;
+          }
+        }
+      `}} />
+
+      {/* Hidden print-only Executive Header */}
+      <div className="hidden print:block border-b-2 border-slate-900 pb-4 mb-6">
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">GITHUB DEVELOPER DNA REPORT</h1>
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">Professional Capability & Career Analytics</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-semibold text-slate-700">Generated: {new Date().toLocaleDateString()}</p>
+            <p className="text-xs text-slate-500">Developer Profile: github.com/{user.login}</p>
+          </div>
+        </div>
+      </div>
+
       <motion.div 
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-border/40 pb-6 w-full"
+        className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-border/40 pb-6 w-full no-print"
       >
         <div className="flex items-center space-x-3 self-start sm:self-center">
           <Button variant="ghost" onClick={onBack} className="rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground">
@@ -372,8 +509,36 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
                       <p className="text-indigo-400 font-semibold mt-0.5">@{user.login}</p>
                     </div>
                     
-                    <div className="flex flex-wrap items-center justify-center md:justify-end gap-2">
-                      <Button variant="outline" size="sm" className="rounded-full border-border/40 hover:bg-secondary" asChild>
+                    <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 no-print">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="rounded-full border-border/40 hover:bg-secondary text-foreground/80 hover:text-foreground cursor-pointer font-semibold h-9"
+                        onClick={handleCopyShareLink}
+                        aria-label="Copy Profile Share Link"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="w-4 h-4 mr-2 text-emerald-500 animate-bounce" /> Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4 mr-2 text-indigo-400" /> Share Link
+                          </>
+                        )}
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="rounded-full border-border/40 hover:bg-secondary text-foreground/80 hover:text-foreground cursor-pointer font-semibold h-9"
+                        onClick={handleExportPDF}
+                        aria-label="Export Profile Report PDF (Ctrl + P)"
+                      >
+                        <FileDown className="w-4 h-4 mr-2 text-indigo-400" /> Export PDF
+                      </Button>
+
+                      <Button variant="outline" size="sm" className="rounded-full border-border/40 hover:bg-secondary cursor-pointer font-semibold h-9" asChild>
                         <a href={user.html_url} target="_blank" rel="noopener noreferrer">
                           <Github className="w-4 h-4 mr-2" /> GitHub Profile
                         </a>
