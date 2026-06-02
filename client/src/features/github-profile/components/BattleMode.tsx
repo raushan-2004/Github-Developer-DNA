@@ -82,6 +82,85 @@ export default function BattleMode({ username1, username2, onBack }: BattleModeP
     ];
   }, [user1, stats1, user2, stats2]);
 
+  const winner = p1Score > p2Score ? 1 : p2Score > p1Score ? 2 : 0; // 0 for tie
+
+  const battleAnalysis = useMemo(() => {
+    if (!user1 || !stats1 || !user2 || !stats2) return null;
+
+    const p1Name = user1.name || user1.login;
+    const p2Name = user2.name || user2.login;
+
+    // Stars
+    const starsDiff = Math.abs(stats1.totalStars - stats2.totalStars);
+    const starsWinner = stats1.totalStars > stats2.totalStars ? 1 : stats2.totalStars > stats1.totalStars ? 2 : 0;
+
+    // Forks
+    const forksDiff = Math.abs(stats1.totalForks - stats2.totalForks);
+    const forksWinner = stats1.totalForks > stats2.totalForks ? 1 : stats2.totalForks > stats1.totalForks ? 2 : 0;
+
+    // Repos
+    const reposDiff = Math.abs(user1.public_repos - user2.public_repos);
+    const reposWinner = user1.public_repos > user2.public_repos ? 1 : user2.public_repos > user1.public_repos ? 2 : 0;
+
+    // Followers
+    const followersDiff = Math.abs(user1.followers - user2.followers);
+    const followersWinner = user1.followers > user2.followers ? 1 : user2.followers > user1.followers ? 2 : 0;
+
+    const insights = [];
+
+    // Analyze Star differences
+    if (starsWinner === 1) {
+      insights.push(`🌟 ${p1Name} dominates community appreciation with ${starsDiff} more stars than ${p2Name}, indicating highly sought-after software releases.`);
+    } else if (starsWinner === 2) {
+      insights.push(`🌟 ${p2Name} dominates community appreciation with ${starsDiff} more stars than ${p1Name}, indicating highly sought-after software releases.`);
+    }
+
+    // Analyze Fork differences
+    if (forksWinner === 1) {
+      insights.push(`🍴 ${p1Name} exhibits superior collaborative leverage, with their codebase being branched/reused ${forksDiff} more times by other engineers.`);
+    } else if (forksWinner === 2) {
+      insights.push(`🍴 ${p2Name} exhibits superior collaborative leverage, with their codebase being branched/reused ${forksDiff} more times by other engineers.`);
+    }
+
+    // Analyze Repo differences
+    if (reposWinner === 1) {
+      insights.push(`📁 With ${reposDiff} more public repositories, ${p1Name} demonstrates an aggressive, shipping-focused building habit.`);
+    } else if (reposWinner === 2) {
+      insights.push(`📁 With ${reposDiff} more public repositories, ${p2Name} demonstrates an aggressive, shipping-focused building habit.`);
+    }
+
+    // Analyze Followers differences
+    if (followersWinner === 1) {
+      insights.push(`👥 ${p1Name} commands a larger industry audience, out-ranking ${p2Name} by ${followersDiff} followers in developer mindshare.`);
+    } else if (followersWinner === 2) {
+      insights.push(`👥 ${p2Name} commands a larger industry audience, out-ranking ${p1Name} by ${followersDiff} followers in developer mindshare.`);
+    }
+
+    // Overall summary statement
+    let summary = '';
+    const scoreDiff = Math.abs(p1Score - p2Score);
+    if (winner === 1) {
+      summary = `${p1Name} secures the victory with a Battle Power of ${p1Score.toLocaleString()} (out-scoring ${p2Name} by ${scoreDiff.toLocaleString()}). This is primarily driven by their outstanding performance in ${
+        starsWinner === 1 ? 'Stars' : reposWinner === 1 ? 'Repositories' : forksWinner === 1 ? 'Forks' : 'Followers'
+      }.`;
+    } else if (winner === 2) {
+      summary = `${p2Name} claims the ultimate title in the arena with a Battle Power of ${p2Score.toLocaleString()} (out-scoring ${p1Name} by ${scoreDiff.toLocaleString()}). This victory is fueled by their massive lead in ${
+        starsWinner === 2 ? 'Stars' : reposWinner === 2 ? 'Repositories' : forksWinner === 2 ? 'Forks' : 'Followers'
+      }.`;
+    } else {
+      summary = `It's a legendary, once-in-a-lifetime Tie! Both developers have matched each other step-for-step in skill and metrics, demonstrating equal technical caliber in the GitHub space.`;
+    }
+
+    return {
+      starsWinner, starsDiff,
+      forksWinner, forksDiff,
+      reposWinner, reposDiff,
+      followersWinner, followersDiff,
+      insights,
+      summary
+    };
+  }, [user1, stats1, user2, stats2, p1Score, p2Score, winner]);
+
   if (isLoading) {
     return (
       <div className="w-full min-h-screen py-10 flex flex-col items-center">
@@ -112,7 +191,6 @@ export default function BattleMode({ username1, username2, onBack }: BattleModeP
     );
   }
 
-  const winner = p1Score > p2Score ? 1 : p2Score > p1Score ? 2 : 0; // 0 for tie
 
   const PlayerCard = ({ user, stats, score, isWinner, isP1 }: any) => {
     const accentColor = isP1 ? 'from-cyan-500 to-blue-600' : 'from-rose-500 to-orange-600';
@@ -179,6 +257,7 @@ export default function BattleMode({ username1, username2, onBack }: BattleModeP
 
   return (
     <div className="w-full min-h-screen py-4 flex flex-col relative space-y-12">
+      
       {/* Background Ambient */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-[-1]">
         <div className="absolute top-1/4 left-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-[100px]" />
@@ -191,8 +270,9 @@ export default function BattleMode({ username1, username2, onBack }: BattleModeP
         </Button>
         <div className="flex items-center text-xl font-black uppercase tracking-widest text-foreground">
           <Swords className="w-6 h-6 mr-3 text-red-500 animate-pulse" />
-          Developer Battle
+          Developer Arena
         </div>
+        <div className="w-[120px]" /> {/* Spacer to balance Escape Arena button on the left */}
       </div>
 
       <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16 w-full max-w-6xl mx-auto">
@@ -247,6 +327,98 @@ export default function BattleMode({ username1, username2, onBack }: BattleModeP
           </ResponsiveContainer>
         </div>
       </motion.div>
+
+      {/* Detailed Comparative Report Section */}
+      {battleAnalysis && (
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.9 }}
+          className="w-full max-w-4xl mx-auto p-8 rounded-3xl bg-card/30 backdrop-blur-md border border-border/40 shadow-xl print-page-break"
+        >
+          <h3 className="text-2xl font-bold text-center mb-6 flex items-center justify-center gap-3">
+            <Trophy className="w-6 h-6 text-yellow-500" />
+            Detailed Battle Analytics Report
+          </h3>
+
+          {/* Dynamic overall battle result description */}
+          <div className="bg-indigo-500/5 border border-indigo-500/20 p-5 rounded-2xl mb-8">
+            <h4 className="text-base font-bold text-indigo-400 mb-2 uppercase tracking-wide">Executive Verdict</h4>
+            <p className="text-foreground/90 leading-relaxed text-sm md:text-base font-medium">
+              {battleAnalysis.summary}
+            </p>
+          </div>
+
+          {/* Custom Head-to-Head Comparison Grid Card */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div className="space-y-4">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Strategic Breakdown</h4>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-xl border border-border/20 text-sm">
+                  <span className="font-bold text-indigo-400 min-w-[50px]">Stars</span>
+                  <span className="text-foreground/80 flex-1">
+                    {battleAnalysis.starsWinner === 0 
+                      ? `Equal community engagement (both players have equal repositories star counts).`
+                      : battleAnalysis.starsWinner === 1 
+                        ? `@${user1.login} leads community appreciation by ${battleAnalysis.starsDiff} stars.` 
+                        : `@${user2.login} leads community appreciation by ${battleAnalysis.starsDiff} stars.`}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-xl border border-border/20 text-sm">
+                  <span className="font-bold text-emerald-400 min-w-[50px]">Forks</span>
+                  <span className="text-foreground/80 flex-1">
+                    {battleAnalysis.forksWinner === 0 
+                      ? `Equal downstream code leverage (both players have equal repositories branched).`
+                      : battleAnalysis.forksWinner === 1 
+                        ? `@${user1.login}'s code is reused/branched ${battleAnalysis.forksDiff} more times.` 
+                        : `@${user2.login}'s code is reused/branched ${battleAnalysis.forksDiff} more times.`}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-xl border border-border/20 text-sm">
+                  <span className="font-bold text-indigo-400 min-w-[50px]">Repos</span>
+                  <span className="text-foreground/80 flex-1">
+                    {battleAnalysis.reposWinner === 0 
+                      ? `Identical repository footprints (both players shipped equal repos).`
+                      : battleAnalysis.reposWinner === 1 
+                        ? `@${user1.login} has shipped ${battleAnalysis.reposDiff} more repositories.` 
+                        : `@${user2.login} has shipped ${battleAnalysis.reposDiff} more repositories.`}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-xl border border-border/20 text-sm">
+                  <span className="font-bold text-rose-400 min-w-[50px]">Follows</span>
+                  <span className="text-foreground/80 flex-1">
+                    {battleAnalysis.followersWinner === 0 
+                      ? `Equal developer network size (both players have equal followers).`
+                      : battleAnalysis.followersWinner === 1 
+                        ? `@${user1.login} holds ${battleAnalysis.followersDiff} more user followers.` 
+                        : `@${user2.login} holds ${battleAnalysis.followersDiff} more user followers.`}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Capabilities Summary</h4>
+              <ul className="space-y-3">
+                {battleAnalysis.insights.map((insight, idx) => (
+                  <li key={idx} className="flex items-start gap-2 bg-secondary/20 p-3.5 rounded-xl border border-border/20 text-sm leading-relaxed">
+                    <span className="text-foreground/85 font-medium">{insight}</span>
+                  </li>
+                ))}
+                {battleAnalysis.insights.length === 0 && (
+                  <li className="flex items-center justify-center p-6 bg-secondary/10 rounded-xl border border-border/20 text-sm italic text-muted-foreground">
+                    Perfect symmetry across all measured attributes.
+                  </li>
+                )}
+              </ul>
+            </div>
+          </div>
+
+        </motion.div>
+      )}
       
     </div>
   );
