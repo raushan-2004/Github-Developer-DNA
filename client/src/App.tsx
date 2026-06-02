@@ -3,7 +3,8 @@ import SearchHero from './features/github-profile/components/SearchHero';
 import Dashboard from './features/github-profile/components/Dashboard';
 // Import the BattleMode component to compare two developers side-by-side
 import BattleMode from './features/github-profile/components/BattleMode';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Server, Loader2, CheckCircle2, Wifi } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
   const [activeUsername, setActiveUsername] = useState<string | null>(null);
@@ -14,6 +15,49 @@ function App() {
     const saved = localStorage.getItem('theme');
     return saved ? saved === 'dark' : true;
   });
+
+  const [isServerChecking, setIsServerChecking] = useState<boolean>(true);
+  const [isServerAwake, setIsServerAwake] = useState<boolean>(false);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+
+  // Render Server Ping Cold Start Handler
+  useEffect(() => {
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+    const healthUrl = apiBase.endsWith('/api') ? apiBase.slice(0, -4) + '/health' : apiBase + '/health';
+
+    let intervalId: any;
+    let timerId: any;
+
+    // Start timer to count seconds
+    timerId = setInterval(() => {
+      setElapsedTime(prev => prev + 1);
+    }, 1000);
+
+    const checkServerHealth = async () => {
+      try {
+        const response = await fetch(healthUrl);
+        if (response.ok) {
+          setIsServerAwake(true);
+          // Wait a brief moment to show checkmark before dismissing loader overlay
+          setTimeout(() => {
+            setIsServerChecking(false);
+            clearInterval(timerId);
+          }, 1200);
+          clearInterval(intervalId);
+        }
+      } catch (err) {
+        console.log("Render backend cold start: server is waking up...");
+      }
+    };
+
+    checkServerHealth();
+    intervalId = setInterval(checkServerHealth, 3000);
+
+    return () => {
+      clearInterval(intervalId);
+      clearInterval(timerId);
+    };
+  }, []);
 
   // 1. Initial mounting effects: parse share links from query parameters
   useEffect(() => {
@@ -83,6 +127,77 @@ function App() {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 transition-colors duration-300 relative overflow-x-hidden">
       
+      {/* Render Cold-Start Wakeup Loading Overlay */}
+      <AnimatePresence>
+        {isServerChecking && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.6, ease: 'easeInOut' }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/90 backdrop-blur-xl px-4 text-center select-none"
+          >
+            <div className="absolute top-[-10%] left-[20%] w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none dark:bg-indigo-500/5 animate-pulse" />
+            <div className="absolute bottom-[-10%] right-[20%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none dark:bg-purple-500/5 animate-pulse" />
+
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1, type: 'spring', stiffness: 100 }}
+              className="max-w-md w-full bg-card/40 border border-border/30 backdrop-blur-md p-8 rounded-3xl shadow-2xl relative overflow-hidden bg-grid-pattern"
+            >
+              <div className="absolute -inset-px rounded-3xl border border-indigo-500/15 pointer-events-none" />
+              
+              <div className="flex justify-center mb-6">
+                <div className="p-4 bg-indigo-500/10 rounded-full border border-indigo-500/20 relative">
+                  {!isServerAwake ? (
+                    <>
+                      <Loader2 className="w-10 h-10 text-indigo-400 animate-spin" />
+                      <div className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-yellow-500 rounded-full border-2 border-background animate-ping" />
+                    </>
+                  ) : (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', damping: 10 }}
+                    >
+                      <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+
+              <h2 className="text-2xl font-black tracking-tight text-foreground font-display mb-2">
+                {!isServerAwake ? 'Waking Up Developer DNA Engine' : 'Engine Ready!'}
+              </h2>
+              
+              <p className="text-muted-foreground text-sm leading-relaxed mb-6 font-medium">
+                {!isServerAwake 
+                  ? "Our free-tier Render backend spins down after 15 minutes of inactivity. Pinging our services... (normally takes 30-50 seconds)." 
+                  : "Authentication and database handshake complete. Ready to analyze code workspaces."}
+              </p>
+
+              {/* Status Pill & Timer */}
+              <div className="flex items-center justify-center gap-3 bg-secondary/50 border border-border/20 px-4 py-2.5 rounded-2xl max-w-[240px] mx-auto">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                  {!isServerAwake ? (
+                    <>
+                      <Wifi className="w-3.5 h-3.5 text-yellow-500 animate-pulse" />
+                      <span>Pinging ({elapsedTime}s)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Server className="w-3.5 h-3.5 text-emerald-500" />
+                      <span className="text-emerald-500">Connected</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* 3D Glass Ambient Background Glows */}
       <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none dark:bg-indigo-500/5 animate-pulse" style={{ animationDuration: '8s' }} />
       <div className="absolute bottom-[-10%] right-[20%] w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none dark:bg-purple-500/5 animate-pulse" style={{ animationDuration: '10s' }} />
