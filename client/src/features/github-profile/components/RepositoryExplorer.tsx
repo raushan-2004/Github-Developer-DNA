@@ -135,7 +135,7 @@ export default function RepositoryExplorer({
     <div className="space-y-6">
       
       {/* 1. Filtering & Sorting Toolbar Panel */}
-      <div className="flex flex-col gap-4 bg-secondary/10 p-5 rounded-2xl border border-border/30 backdrop-blur-sm">
+      <div className="flex flex-col gap-4 bg-secondary/10 p-5 rounded-2xl border border-border/30 backdrop-blur-sm no-print">
         
         {/* Row 1: Search & Sort Buttons */}
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -409,7 +409,7 @@ export default function RepositoryExplorer({
       {processedRepos.length > ITEMS_PER_PAGE && (
         <motion.div 
           layout="position"
-          className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border/20"
+          className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border/20 no-print"
         >
           <span className="text-xs font-semibold text-muted-foreground">
             Showing <strong className="text-foreground">{(activePage - 1) * ITEMS_PER_PAGE + 1}</strong> to{' '}

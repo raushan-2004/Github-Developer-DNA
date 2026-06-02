@@ -109,9 +109,9 @@ export default function AnalyticsSection({ repos, languagesList }: AnalyticsSect
                 <Pie
                   data={languagesList}
                   cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
+                  cy="45%"
+                  innerRadius={55}
+                  outerRadius={90}
                   paddingAngle={2}
                   dataKey="count"
                   animationDuration={1500}
@@ -123,11 +123,11 @@ export default function AnalyticsSection({ repos, languagesList }: AnalyticsSect
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
                 <Legend 
-                  layout="vertical" 
-                  verticalAlign="middle" 
-                  align="right"
+                  layout="horizontal" 
+                  verticalAlign="bottom" 
+                  align="center"
                   formatter={(value) => (
-                    <span className="text-foreground/80 font-medium text-sm ml-1">{value}</span>
+                    <span className="text-foreground/80 font-semibold text-xs mx-1 leading-none">{value}</span>
                   )}
                 />
               </PieChart>
@@ -148,16 +148,19 @@ export default function AnalyticsSection({ repos, languagesList }: AnalyticsSect
         <CardContent>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topStarredRepos} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+              <BarChart data={topStarredRepos} margin={{ top: 20, right: 40, left: 15, bottom: 90 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10" vertical={false} />
                 <XAxis 
                   dataKey="name" 
-                  tick={{ fill: 'currentColor', fontSize: 12, opacity: 0.7 }} 
+                  tick={{ fill: 'currentColor', fontSize: 10, opacity: 0.7 }} 
                   axisLine={false}
                   tickLine={false}
+                  angle={-90}
+                  textAnchor="end"
+                  height={95}
                 />
                 <YAxis 
-                  tick={{ fill: 'currentColor', fontSize: 12, opacity: 0.7 }}
+                  tick={{ fill: 'currentColor', fontSize: 10, opacity: 0.7 }}
                   axisLine={false}
                   tickLine={false}
                   allowDecimals={false}
@@ -180,7 +183,7 @@ export default function AnalyticsSection({ repos, languagesList }: AnalyticsSect
       </Card>
 
       {/* Technology Usage Chart */}
-      <Card className="border-border/30 bg-card/40 backdrop-blur-md shadow-sm">
+      <Card className="border-border/30 bg-card/40 backdrop-blur-md shadow-sm print-page-break">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
             <Layers className="w-4.5 h-4.5 text-emerald-400" />
@@ -192,11 +195,11 @@ export default function AnalyticsSection({ repos, languagesList }: AnalyticsSect
           <div className="h-[300px] w-full">
             {topTopics.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topTopics} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                <BarChart data={topTopics} layout="vertical" margin={{ top: 5, right: 40, left: 90, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10" horizontal={false} />
                   <XAxis 
                     type="number" 
-                    tick={{ fill: 'currentColor', fontSize: 12, opacity: 0.7 }}
+                    tick={{ fill: 'currentColor', fontSize: 10, opacity: 0.7 }}
                     axisLine={false}
                     tickLine={false}
                     allowDecimals={false}
@@ -204,9 +207,10 @@ export default function AnalyticsSection({ repos, languagesList }: AnalyticsSect
                   <YAxis 
                     dataKey="name" 
                     type="category" 
-                    tick={{ fill: 'currentColor', fontSize: 12, opacity: 0.8 }}
+                    tick={{ fill: 'currentColor', fontSize: 10, opacity: 0.8 }}
                     axisLine={false}
                     tickLine={false}
+                    width={85}
                   />
                   <Tooltip 
                     cursor={{ fill: 'currentColor', opacity: 0.05 }}
@@ -243,7 +247,7 @@ export default function AnalyticsSection({ repos, languagesList }: AnalyticsSect
           <div className="h-[300px] w-full">
             {activityData.length > 1 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={activityData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                <AreaChart data={activityData} margin={{ top: 20, right: 40, left: 15, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorUpdates" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>

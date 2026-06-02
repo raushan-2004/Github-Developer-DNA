@@ -1,34 +1,33 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Briefcase, 
-  Link as LinkIcon, 
-  Calendar, 
-  Star, 
-  BookOpen, 
-  Users, 
-  GitFork, 
-  AlertCircle, 
+import {
+  ArrowLeft,
+  MapPin,
+  Briefcase,
+  Link as LinkIcon,
+  Calendar,
+  Star,
+  BookOpen,
+  Users,
+  GitFork,
+  AlertCircle,
   Sparkles,
   SearchIcon,
   Moon,
   Sun,
-  ShieldCheck,
   Copy,
   Check,
   FileDown
 } from 'lucide-react';
 
 const Github = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg 
-    viewBox="0 0 24 24" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    fill="none" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
+  <svg
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth="2"
+    fill="none"
+    strokeLinecap="round"
+    strokeLinejoin="round"
     {...props}
   >
     <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
@@ -114,7 +113,7 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
       const githubUrlRegex = /^(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9-_\.]+)(?:\/.*)?$/i;
       const match = query.match(githubUrlRegex);
       const parsedUsername = (match && match[1]) ? match[1] : query;
-      
+
       setActiveUsername(parsedUsername);
       setDashboardSearch('');
       setSelectedLanguage(null);
@@ -282,7 +281,7 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
         <div className="space-y-2">
           <h2 className="text-2xl font-bold tracking-tight">Error Fetching Profile</h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            We couldn't retrieve profile information for <span className="font-semibold text-foreground">"{activeUsername}"</span>. 
+            We couldn't retrieve profile information for <span className="font-semibold text-foreground">"{activeUsername}"</span>.
             This developer may not exist or the GitHub API is currently rate-limited.
           </p>
         </div>
@@ -316,9 +315,10 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
 
   return (
     <div className="w-full space-y-8 py-2 relative min-h-screen print-container">
-      
+
       {/* Print Specific CSS Stylesheet */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media print {
           /* Force light theme for standard paper printing */
           html, body {
@@ -365,25 +365,23 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
             margin-bottom: 16px !important;
           }
 
-          /* Grid layout adjustment for print sheets */
-          .grid {
+          /* Turn multi-column grids into clean full-width vertical blocks for printing */
+          .grid, .grid-cols-1, .grid-cols-2, .lg\\:grid-cols-3, .lg\\:grid-cols-2 {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 24px !important;
+          }
+
+          /* Render stats grid in a neat 2x2 grid for print */
+          .grid.grid-cols-2.lg\\:grid-cols-4 {
             display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 16px !important;
           }
           
-          .lg\\:grid-cols-4 {
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-          }
-
-          .lg\\:grid-cols-3 {
-            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-          }
-          
-          .lg\\:col-span-2 {
-            grid-column: span 2 / span 2 !important;
-          }
-
-          .lg\\:col-span-1 {
-            grid-column: span 1 / span 1 !important;
+          .lg\\:col-span-1, .lg\\:col-span-2, .lg\\:col-span-3, .col-span-1, .col-span-2 {
+            width: 100% !important;
+            grid-column: auto !important;
           }
 
           .text-foreground, .text-card-foreground {
@@ -405,10 +403,17 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
           .shadow-md, .shadow-xl {
             box-shadow: none !important;
           }
+
+          .bg-grid-pattern {
+            background-image: none !important; /* Hide background grid patterns on print */
+          }
           
-          /* Force page break before Analytics or Career advisor if necessary */
+          /* Force page break exactly before major sections */
           .print-page-break {
             page-break-before: always !important;
+            break-before: page !important;
+            margin-top: 0 !important;
+            padding-top: 24px !important;
           }
         }
       `}} />
@@ -427,7 +432,7 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
         </div>
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-border/40 pb-6 w-full no-print"
@@ -449,7 +454,7 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
           {/* Dashboard Quick Lookup Search */}
           <form onSubmit={handleSearchSubmit} className="relative flex-1 sm:w-64 max-w-sm">
             <SearchIcon className="absolute inset-y-0 left-3 my-auto w-4 h-4 text-muted-foreground" />
-            <Input 
+            <Input
               type="text"
               placeholder="Quick search user..."
               className="pl-9 pr-4 py-1.5 h-9 rounded-full bg-secondary/30 border-border/50 text-sm focus-visible:ring-primary"
@@ -484,24 +489,24 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
         {/* 2. Glassmorphic Profile Banner */}
         <motion.div variants={itemVariants}>
           <Card className="overflow-hidden border-border/30 bg-card/40 backdrop-blur-md relative bg-grid-pattern shadow-md">
-            
-            {/* Cache Status Badge */}
+
+            {/* Cache Status Badge
             {user.cached && (
               <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 backdrop-blur-md">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                Cached Response
+                <span className="leading-none">Cached Response</span>
               </div>
-            )}
+            )} */}
 
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-                
+
                 {/* Big avatar image with pulsing ring */}
                 <div className="relative group">
                   <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-60 blur-md group-hover:opacity-100 transition duration-300" />
-                  <img 
-                    src={user.avatar_url} 
-                    alt={user.login} 
+                  <img
+                    src={user.avatar_url}
+                    alt={user.login}
                     className="relative w-28 h-28 rounded-full border-2 border-background object-cover shadow-xl"
                   />
                 </div>
@@ -513,11 +518,11 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
                       <h2 className="text-3xl font-extrabold text-foreground tracking-tight">{user.name || user.login}</h2>
                       <p className="text-indigo-400 font-semibold mt-0.5">@{user.login}</p>
                     </div>
-                    
+
                     <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 no-print">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="rounded-full border-border/40 hover:bg-secondary text-foreground/80 hover:text-foreground cursor-pointer font-semibold h-9"
                         onClick={handleCopyShareLink}
                         aria-label="Copy Profile Share Link"
@@ -532,10 +537,10 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
                           </>
                         )}
                       </Button>
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="rounded-full border-border/40 hover:bg-secondary text-foreground/80 hover:text-foreground cursor-pointer font-semibold h-9"
                         onClick={handleExportPDF}
                         aria-label="Export Profile Report PDF (Ctrl + P)"
@@ -563,8 +568,8 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
                   {/* Badges Container */}
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
                     {developerBadges.map((badge, idx) => (
-                      <span 
-                        key={idx} 
+                      <span
+                        key={idx}
                         className={`text-xs px-2.5 py-0.5 rounded-full border font-semibold ${badge.color}`}
                       >
                         {badge.text}
@@ -589,9 +594,9 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
                     {user.blog && (
                       <div className="flex items-center gap-1.5 max-w-xs truncate">
                         <LinkIcon className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                        <a 
+                        <a
                           href={user.blog.startsWith('http') ? user.blog : `https://${user.blog}`}
-                          target="_blank" 
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="hover:text-indigo-400 underline transition-colors truncate"
                         >
@@ -616,8 +621,8 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
         </motion.div>
 
         {/* 3. 4-Column High-Fidelity Stats Grid */}
-        <motion.div 
-          variants={itemVariants} 
+        <motion.div
+          variants={itemVariants}
           className="grid grid-cols-2 lg:grid-cols-4 gap-4"
         >
           {/* Card 1: Total Stars */}
@@ -682,11 +687,11 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
         </motion.div>
 
         {/* 4. Two-Column Insights & Repository Showcase Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start print-page-break">
+
           {/* Left Column: Language DNA & Insight Card */}
           <motion.div variants={itemVariants} className="lg:col-span-1 space-y-8">
-            
+
             {/* Language Breakdown */}
             <Card className="border-border/30 bg-card/40 backdrop-blur-md relative overflow-hidden shadow-sm">
               <CardHeader className="pb-4">
@@ -707,11 +712,11 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
                     {/* Concentric Progress Bar Visual */}
                     <div className="w-full flex h-3.5 rounded-full overflow-hidden bg-secondary/40 my-3">
                       {languagesList.slice(0, 5).map((lang, index) => (
-                        <div 
-                          key={index} 
-                          style={{ 
+                        <div
+                          key={index}
+                          style={{
                             width: `${lang.percentage}%`,
-                            backgroundColor: lang.color 
+                            backgroundColor: lang.color
                           }}
                           title={`${lang.name}: ${lang.percentage}%`}
                           className="h-full transition-all"
@@ -722,16 +727,15 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
                     {/* Detailed List */}
                     <div className="space-y-4 pt-1">
                       {languagesList.map((lang, index) => (
-                        <div 
+                        <div
                           key={index}
                           onClick={() => setSelectedLanguage(selectedLanguage === lang.name ? null : lang.name)}
-                          className={`space-y-1.5 cursor-pointer p-1.5 rounded-lg transition-colors hover:bg-secondary/40 ${
-                            selectedLanguage === lang.name ? 'bg-secondary/50 border border-indigo-500/25' : 'border border-transparent'
-                          }`}
+                          className={`space-y-1.5 cursor-pointer p-1.5 rounded-lg transition-colors hover:bg-secondary/40 ${selectedLanguage === lang.name ? 'bg-secondary/50 border border-indigo-500/25' : 'border border-transparent'
+                            }`}
                         >
                           <div className="flex justify-between items-center text-sm">
                             <div className="flex items-center space-x-2.5">
-                              <div 
+                              <div
                                 className="w-3 h-3 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: lang.color }}
                               />
@@ -741,10 +745,10 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
                               {lang.count} {lang.count === 1 ? 'repo' : 'repos'} ({lang.percentage}%)
                             </span>
                           </div>
-                          
+
                           {/* Individual Progress bar */}
                           <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
-                            <motion.div 
+                            <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${lang.percentage}%` }}
                               transition={{ duration: 0.8, delay: index * 0.05 }}
@@ -758,9 +762,9 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
 
                     {selectedLanguage && (
                       <div className="pt-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => setSelectedLanguage(null)}
                           className="w-full text-xs text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/5 rounded-lg border border-indigo-500/10"
                         >
@@ -811,8 +815,8 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RepositoryExplorer 
-                  repos={repos || []} 
+                <RepositoryExplorer
+                  repos={repos || []}
                   selectedLanguage={selectedLanguage}
                   setSelectedLanguage={setSelectedLanguage}
                 />
@@ -823,22 +827,26 @@ export default function Dashboard({ username, onBack, darkMode, toggleDarkMode }
         </div>
 
         {/* 5. AI Career Advisor Section */}
-        <AICareerAdvisor 
-          profileData={{
-            username: user.login,
-            publicRepos: user.public_repos,
-            followers: user.followers,
-            totalStars: stats?.totalStars,
-            topLanguages: languagesList.map(l => l.name),
-            developerType: developerBadges.map(b => b.text).join(', ')
-          }} 
-        />
+        <div className="print-page-break w-full">
+          <AICareerAdvisor
+            profileData={{
+              username: user.login,
+              publicRepos: user.public_repos,
+              followers: user.followers,
+              totalStars: stats?.totalStars,
+              topLanguages: languagesList.map(l => l.name),
+              developerType: developerBadges.map(b => b.text).join(', ')
+            }}
+          />
+        </div>
 
         {/* 6. Analytics Section */}
-        <AnalyticsSection 
-          repos={repos || []} 
-          languagesList={languagesList} 
-        />
+        <div className="print-page-break w-full">
+          <AnalyticsSection
+            repos={repos || []}
+            languagesList={languagesList}
+          />
+        </div>
 
       </motion.div>
     </div>
