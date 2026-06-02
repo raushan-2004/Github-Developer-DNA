@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import SearchHero from './features/github-profile/components/SearchHero';
 import Dashboard from './features/github-profile/components/Dashboard';
+// Import the BattleMode component to compare two developers side-by-side
+import BattleMode from './features/github-profile/components/BattleMode';
 import { Sun, Moon } from 'lucide-react';
 
 function App() {
   const [activeUsername, setActiveUsername] = useState<string | null>(null);
+  const [battleUsernames, setBattleUsernames] = useState<[string, string] | null>(null);
   
   // Set default theme to dark for premium look!
   const [darkMode, setDarkMode] = useState<boolean>(() => {
@@ -32,11 +35,19 @@ function App() {
       <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none dark:bg-indigo-500/5 animate-pulse" style={{ animationDuration: '8s' }} />
       <div className="absolute bottom-[-10%] right-[20%] w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none dark:bg-purple-500/5 animate-pulse" style={{ animationDuration: '10s' }} />
 
-      <main className={`container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col justify-start min-h-screen ${!activeUsername ? 'items-center justify-center' : ''}`}>
+      <main className={`container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col justify-start min-h-screen ${(!activeUsername && !battleUsernames) ? 'items-center justify-center' : ''}`}>
         {activeUsername ? (
           <Dashboard 
             username={activeUsername} 
             onBack={() => setActiveUsername(null)} 
+            darkMode={darkMode}
+            toggleDarkMode={toggleDarkMode}
+          />
+        ) : battleUsernames ? (
+          <BattleMode 
+            username1={battleUsernames[0]}
+            username2={battleUsernames[1]}
+            onBack={() => setBattleUsernames(null)}
             darkMode={darkMode}
             toggleDarkMode={toggleDarkMode}
           />
@@ -57,7 +68,7 @@ function App() {
               </button>
             </div>
             
-            <SearchHero onSelect={setActiveUsername} />
+            <SearchHero onSelect={setActiveUsername} onBattle={(u1, u2) => setBattleUsernames([u1, u2])} />
           </div>
         )}
       </main>

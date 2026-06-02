@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Users, BookOpen } from 'lucide-react';
+import { Search, Users, BookOpen, Swords } from 'lucide-react';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
 import { Skeleton } from '../../../components/ui/skeleton';
@@ -24,20 +24,31 @@ const Github = (props: React.SVGProps<SVGSVGElement>) => (
 
 interface SearchHeroProps {
   onSelect: (username: string) => void;
+  onBattle: (user1: string, user2: string) => void;
 }
 
-export default function SearchHero({ onSelect }: SearchHeroProps) {
+export default function SearchHero({ onSelect, onBattle }: SearchHeroProps) {
+  const [isBattleMode, setIsBattleMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [battleTerm1, setBattleTerm1] = useState('');
+  const [battleTerm2, setBattleTerm2] = useState('');
+  
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  const { data: user, isLoading, isError } = useGithubUser(debouncedSearch);
+  const { data: user, isLoading, isError } = useGithubUser(isBattleMode ? '' : debouncedSearch);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (user) {
-      onSelect(user.login);
-    } else if (searchTerm.trim()) {
-      onSelect(searchTerm.trim());
+    if (isBattleMode) {
+      if (battleTerm1.trim() && battleTerm2.trim()) {
+        onBattle(battleTerm1.trim(), battleTerm2.trim());
+      }
+    } else {
+      if (user) {
+        onSelect(user.login);
+      } else if (searchTerm.trim()) {
+        onSelect(searchTerm.trim());
+      }
     }
   };
 
@@ -64,29 +75,82 @@ export default function SearchHero({ onSelect }: SearchHeroProps) {
         </p>
       </motion.div>
 
+      {/* Mode Toggle */}
+      <div className="flex justify-center mt-2">
+        <div className="bg-secondary/40 p-1 rounded-full border border-border/50 flex">
+          <button 
+            type="button"
+            onClick={() => setIsBattleMode(false)}
+            className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${!isBattleMode ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            DNA Analyze
+          </button>
+          <button 
+            type="button"
+            onClick={() => setIsBattleMode(true)}
+            className={`px-6 py-2 rounded-full text-sm font-semibold flex items-center transition-all ${isBattleMode ? 'bg-rose-500/10 text-rose-500 shadow-sm border border-rose-500/20' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            <Swords className="w-4 h-4 mr-2" /> Battle Mode
+          </button>
+        </div>
+      </div>
+
       {/* Search Input Form */}
       <motion.form 
         onSubmit={handleSubmit}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="w-full relative group"
+        className="w-full relative group space-y-4"
       >
-        <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-muted-foreground group-focus-within:text-indigo-400 transition-colors">
-          <Search className="w-5 h-5" />
-        </div>
-        <Input 
-          type="text" 
-          placeholder="Enter a GitHub username... (e.g., torvalds)"
-          className="w-full h-14 pl-12 pr-32 text-lg rounded-full shadow-sm bg-card/40 backdrop-blur-sm border-2 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 transition-all font-medium"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <div className="absolute inset-y-0 right-2 flex items-center">
-          <Button type="submit" className="rounded-full px-6 h-10 font-semibold shadow-md bg-indigo-600 hover:bg-indigo-500 text-white border-none cursor-pointer">
-            Analyze
-          </Button>
-        </div>
+        {!isBattleMode ? (
+          <div className="relative w-full">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-muted-foreground group-focus-within:text-indigo-400 transition-colors">
+              <Search className="w-5 h-5" />
+            </div>
+            <Input 
+              type="text" 
+              placeholder="Enter a GitHub username... (e.g., torvalds)"
+              className="w-full h-14 pl-12 pr-32 text-lg rounded-full shadow-sm bg-card/40 backdrop-blur-sm border-2 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 transition-all font-medium"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <div className="absolute inset-y-0 right-2 flex items-center">
+              <Button type="submit" className="rounded-full px-6 h-10 font-semibold shadow-md bg-indigo-600 hover:bg-indigo-500 text-white border-none cursor-pointer">
+                Analyze
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col md:flex-row gap-4 items-center w-full">
+            <div className="relative w-full">
+              <Input 
+                type="text" 
+                placeholder="Player 1 username..."
+                className="w-full h-14 px-6 text-lg rounded-full shadow-sm bg-card/40 backdrop-blur-sm border-2 border-indigo-500/30 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 transition-all font-medium text-center"
+                value={battleTerm1}
+                onChange={(e) => setBattleTerm1(e.target.value)}
+                required
+              />
+            </div>
+            <div className="hidden md:flex font-black text-xl italic text-muted-foreground mx-2">VS</div>
+            <div className="relative w-full">
+              <Input 
+                type="text" 
+                placeholder="Player 2 username..."
+                className="w-full h-14 px-6 text-lg rounded-full shadow-sm bg-card/40 backdrop-blur-sm border-2 border-rose-500/30 focus-visible:ring-rose-500 focus-visible:border-rose-500 transition-all font-medium text-center"
+                value={battleTerm2}
+                onChange={(e) => setBattleTerm2(e.target.value)}
+                required
+              />
+            </div>
+            <div className="w-full md:w-auto flex justify-center mt-2 md:mt-0">
+              <Button type="submit" className="w-full md:w-auto rounded-full px-8 h-14 font-bold shadow-lg bg-gradient-to-r from-indigo-500 to-rose-500 hover:opacity-90 text-white border-none cursor-pointer text-lg">
+                FIGHT!
+              </Button>
+            </div>
+          </div>
+        )}
       </motion.form>
 
       {/* Results Area */}
@@ -120,7 +184,7 @@ export default function SearchHero({ onSelect }: SearchHeroProps) {
           </motion.div>
         )}
 
-        {user && !isLoading && !isError && (
+        {user && !isLoading && !isError && !isBattleMode && (
           <motion.div 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
